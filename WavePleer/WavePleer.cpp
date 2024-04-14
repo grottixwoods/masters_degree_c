@@ -163,8 +163,9 @@ void processEvents(sf::RenderWindow& window, std::vector<sf::Sprite>& buttons, s
     }
 }
 
-void draw(sf::RenderWindow& window, const std::vector<sf::Sprite>& buttons, const sf::Text& trackNameText, const sf::RectangleShape& volumeSlider, const sf::CircleShape& volumeIndicator) {
+void draw(sf::RenderWindow& window, const std::vector<sf::Sprite>& buttons, const sf::Text& trackNameText, const sf::RectangleShape& volumeSlider, const sf::CircleShape& volumeIndicator, sf::Sprite& backgroundImage) {
     window.clear(sf::Color::White);
+    window.draw(backgroundImage);
     for (const auto& button : buttons)
         window.draw(button);
     window.draw(trackNameText);
@@ -175,12 +176,20 @@ void draw(sf::RenderWindow& window, const std::vector<sf::Sprite>& buttons, cons
 
 int main(int argc, char* argv[]) {
     std::string rootPath = GetRootPath();
-    std::string folderPath = "C:\\Users\\Grotti\\Music";
+    std::string folderPath = "C:\\Users\\User\\Music";
     std::vector<std::string> audioFiles;
 
     loadAudioFiles(folderPath, audioFiles);
 
     sf::RenderWindow window(sf::VideoMode(600, 800), "Audio Player");
+
+    sf::Texture backgroundTexture;
+    if (!backgroundTexture.loadFromFile(rootPath + "\\Assets\\background.jpg")) {
+        std::cerr << "Failed to load background image" << std::endl;
+        return 1;
+    }
+
+    sf::Sprite backgroundImage(backgroundTexture);
 
     std::vector<sf::Texture> buttonTextures(4);
     std::vector<sf::Sprite> buttons(4);
@@ -252,7 +261,7 @@ int main(int argc, char* argv[]) {
             trackNameText.setPosition(centerX - textOffset, buttons[0].getPosition().y - 100);
         }
 
-        draw(window, buttons, trackNameText, volumeSlider, volumeIndicator);
+        draw(window, buttons, trackNameText, volumeSlider, volumeIndicator, backgroundImage);
     }
 
     return 0;
