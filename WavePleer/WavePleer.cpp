@@ -5,6 +5,8 @@
 #include <filesystem>
 #include <vector>
 #include <functional>
+#include <unordered_set>
+#include <fstream>
 
 std::string GetRootPath() {
     std::filesystem::path fullPath = std::filesystem::current_path();
@@ -114,6 +116,80 @@ void handlePreviousButtonPress(sf::Music& music, const std::vector<std::string>&
     }
 }
 
+// Функция для сохранения избранных треков в файл
+void saveFavoritesToFile(const std::string& filePath, const std::unordered_set<std::string>& favorites) {
+    std::ofstream file(filePath);
+    if (file.is_open()) {
+        for (const auto& track : favorites) {
+            file << track << std::endl;
+        }
+        file.close();
+    }
+    else {
+        std::cerr << "Failed to open favorites file for writing: " << filePath << std::endl;
+    }
+}
+
+void loadFavoritesFromFile(const std::string& filePath, std::unordered_set<std::string>& favorites) {
+    std::ifstream file(filePath);
+    if (file.is_open()) {
+        std::string line;
+        while (std::getline(file, line)) {
+            favorites.insert(line);
+        }
+        file.close();
+    }
+    else {
+        std::cerr << "Failed to open favorites file for reading: " << filePath << std::endl;
+    }
+}
+
+// Функция для обработки нажатия кнопки избранного трека
+void handleFavoriteButtonPress(const std::string& currentTrack, std::unordered_set<std::string>& favorites, const std::string& favoritesFilePath) {
+    if (favorites.find(currentTrack) == favorites.end()) {
+        favorites.insert(currentTrack);
+        saveFavoritesToFile(favoritesFilePath, favorites);
+        std::cout << "Added to favorites: " << currentTrack << std::endl;
+    }
+    else {
+        std::cout << "Track is already in favorites: " << currentTrack << std::endl;
+    }
+}
+
+// Функция для отображения экрана избранных треков
+void displayFavoritesScreen(sf::RenderWindow& window, const std::unordered_set<std::string>& favorites, sf::Font& font) {
+    sf::Text favoritesText;
+    favoritesText.setFont(font);
+    favoritesText.setFillColor(sf::Color::Black);
+    favoritesText.setCharacterSize(24);
+    favoritesText.setStyle(sf::Text::Bold);
+    favoritesText.setPosition(50, 50);
+
+    std::string favoritesList = "Favorites:\n";
+    for (const auto& track : favorites) {
+        favoritesList += std::filesystem::path(track).filename().string() + "\n";
+    }
+
+    favoritesText.setString(favoritesList);
+
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            }
+            else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+                return; // Exit favorites screen on ESC key press
+            }
+        }
+
+        window.clear(sf::Color::White);
+        window.draw(favoritesText);
+        window.display();
+    }
+}
+
+
 void loadImages(const std::string& rootPath, std::vector<sf::Texture>& images) {
     std::string coversPath = rootPath + "\\Covers";
     int index = 0;
@@ -154,7 +230,7 @@ void setPositionForImage(sf::RenderWindow& window, sf::Sprite& imageSprite, cons
         volumeSlider.getPosition().y - 120 - imageBounds.height);
 }
 
-void processEvents(sf::RenderWindow& window, std::vector<sf::Sprite>& buttons, sf::Music& music, std::vector<std::string>& audioFiles, int& currentTrackIndex, sf::Clock& fadeTimer, sf::Sprite*& activeButton, sf::RectangleShape& volumeSlider, sf::CircleShape& volumeIndicator, bool& isVolumeIndicatorDragged, std::vector<sf::Texture>& images, int& currentImageIndex, sf::Sprite& imageSprite) {
+void processEvents(sf::RenderWindow& window, std::vector<sf::Sprite>& buttons, sf::Music& music, std::vector<std::string>& audioFiles, int& currentTrackIndex, sf::Clock& fadeTimer, sf::Sprite*& activeButton, sf::RectangleShape& volumeSlider, sf::CircleShape& volumeIndicator, bool& isVolumeIndicatorDragged, std::vector<sf::Texture>& images, int& currentImageIndex, sf::Sprite& imageSprite, std::unordered_set<std::string>& favorites, const std::string& favoritesFilePath, sf::Font& font) {
     sf::Event event;
     while (window.pollEvent(event)) {
         if (event.type == sf::Event::Closed)
@@ -183,6 +259,11 @@ void processEvents(sf::RenderWindow& window, std::vector<sf::Sprite>& buttons, s
                             imageSprite.setTexture(images[currentImageIndex]);
                             setPositionForImage(window, imageSprite, volumeSlider);
                             break;
+                        case 4: // Favorite button
+                            if (!audioFiles.empty()) {
+                                handleFavoriteButtonPress(audioFiles[currentTrackIndex], favorites, favoritesFilePath);
+                            }
+                            break;
                         }
                     }
                 }
@@ -206,6 +287,9 @@ void processEvents(sf::RenderWindow& window, std::vector<sf::Sprite>& buttons, s
                 music.setVolume(volumePercentage * 100);
             }
         }
+        else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F) {
+            displayFavoritesScreen(window, favorites, font);
+        }
     }
 }
 
@@ -222,16 +306,17 @@ void draw(sf::RenderWindow& window, const std::vector<sf::Sprite>& buttons, cons
 
 int main(int argc, char* argv[]) {
     std::string rootPath = GetRootPath();
-    std::string folderPath = "C:\\Users\\Grotti\\Music";
+    std::string folderPath = "C:\\Users\\User\\Music";
     std::vector<std::string> audioFiles;
+    std::unordered_set<std::string> favorites;
 
     loadAudioFiles(folderPath, audioFiles);
 
     sf::RenderWindow window(sf::VideoMode(600, 800), "Audio Player");
 
-    std::vector<sf::Texture> buttonTextures(4);
-    std::vector<sf::Sprite> buttons(4);
-    std::vector<std::string> buttonPaths = { "\\Assets\\play-button.png", "\\Assets\\pause-button.png","\\Assets\\previous-button.png", "\\Assets\\next-button.png" };
+    std::vector<sf::Texture> buttonTextures(5);
+    std::vector<sf::Sprite> buttons(5);
+    std::vector<std::string> buttonPaths = { "\\Assets\\play-button.png", "\\Assets\\pause-button.png", "\\Assets\\previous-button.png", "\\Assets\\next-button.png", "\\Assets\\favorite-button.png" };
 
     loadButtonTextures(rootPath, buttonPaths, buttonTextures);
 
@@ -286,8 +371,11 @@ int main(int argc, char* argv[]) {
     trackNameText.setStyle(sf::Text::Bold);
     trackNameText.setPosition(buttons[0].getPosition().x, buttons[0].getPosition().y - 30 - 30);
 
+    std::string favoritesFilePath = rootPath + "\\favorites.txt";
+    loadFavoritesFromFile(favoritesFilePath, favorites);
+
     while (window.isOpen()) {
-        processEvents(window, buttons, music, audioFiles, currentTrackIndex, fadeTimer, activeButton, volumeSlider, volumeIndicator, isVolumeIndicatorDragged, images, currentImageIndex, imageSprite);
+        processEvents(window, buttons, music, audioFiles, currentTrackIndex, fadeTimer, activeButton, volumeSlider, volumeIndicator, isVolumeIndicatorDragged, images, currentImageIndex, imageSprite, favorites, favoritesFilePath, font);
 
         if (fadeTimer.getElapsedTime().asSeconds() < fadeDuration) {
             float t = fadeTimer.getElapsedTime().asSeconds() / fadeDuration;
