@@ -114,7 +114,47 @@ void handlePreviousButtonPress(sf::Music& music, const std::vector<std::string>&
     }
 }
 
-void processEvents(sf::RenderWindow& window, std::vector<sf::Sprite>& buttons, sf::Music& music, std::vector<std::string>& audioFiles, int& currentTrackIndex, sf::Clock& fadeTimer, sf::Sprite*& activeButton, sf::RectangleShape& volumeSlider, sf::CircleShape& volumeIndicator, bool& isVolumeIndicatorDragged) {
+void loadImages(const std::string& rootPath, std::vector<sf::Texture>& images) {
+    std::string coversPath = rootPath + "\\Covers";
+    int index = 0;
+    for (const auto& entry : std::filesystem::directory_iterator(coversPath)) {
+        std::string filePath = entry.path().string();
+        if (filePath.substr(filePath.find_last_of(".") + 1) == "png") {
+            sf::Texture texture;
+            if (texture.loadFromFile(filePath)) {
+                images.push_back(texture);
+                index++;
+            }
+        }
+    }
+}
+
+void setPositionForImage(sf::RenderWindow& window, sf::Sprite& imageSprite, const sf::RectangleShape& volumeSlider) {
+    sf::Vector2u windowSize = window.getSize();
+    sf::FloatRect imageBounds = imageSprite.getGlobalBounds();
+
+    // Желаемый размер изображения (400x400)
+    sf::Vector2f desiredSize(420.f, 420.f);
+
+    // Получаем текущий размер изображения
+    sf::Vector2f currentSize = sf::Vector2f(imageBounds.width, imageBounds.height);
+
+    // Масштабируем изображение, чтобы изменить его размер до желаемого
+    if (currentSize != desiredSize) {
+        float scaleX = desiredSize.x / currentSize.x;
+        float scaleY = desiredSize.y / currentSize.y;
+        imageSprite.setScale(scaleX, scaleY);
+    }
+
+    // Пересчитываем глобальные границы после изменения размера
+    imageBounds = imageSprite.getGlobalBounds();
+
+    // Располагаем изображение по центру окна
+    imageSprite.setPosition((windowSize.x - imageBounds.width) / 2,
+        volumeSlider.getPosition().y - 120 - imageBounds.height);
+}
+
+void processEvents(sf::RenderWindow& window, std::vector<sf::Sprite>& buttons, sf::Music& music, std::vector<std::string>& audioFiles, int& currentTrackIndex, sf::Clock& fadeTimer, sf::Sprite*& activeButton, sf::RectangleShape& volumeSlider, sf::CircleShape& volumeIndicator, bool& isVolumeIndicatorDragged, std::vector<sf::Texture>& images, int& currentImageIndex, sf::Sprite& imageSprite) {
     sf::Event event;
     while (window.pollEvent(event)) {
         if (event.type == sf::Event::Closed)
@@ -133,9 +173,15 @@ void processEvents(sf::RenderWindow& window, std::vector<sf::Sprite>& buttons, s
                             break;
                         case 2: // Next button
                             handleNextButtonPress(music, audioFiles, currentTrackIndex, buttons[2], buttons, fadeTimer, activeButton);
+                            currentImageIndex = (currentImageIndex + 1) % images.size();
+                            imageSprite.setTexture(images[currentImageIndex]);
+                            setPositionForImage(window, imageSprite, volumeSlider);
                             break;
                         case 3: // Previous button
                             handlePreviousButtonPress(music, audioFiles, currentTrackIndex, buttons[3], buttons, fadeTimer, activeButton);
+                            currentImageIndex = (currentImageIndex - 1 + images.size()) % images.size();
+                            imageSprite.setTexture(images[currentImageIndex]);
+                            setPositionForImage(window, imageSprite, volumeSlider);
                             break;
                         }
                     }
@@ -163,33 +209,25 @@ void processEvents(sf::RenderWindow& window, std::vector<sf::Sprite>& buttons, s
     }
 }
 
-void draw(sf::RenderWindow& window, const std::vector<sf::Sprite>& buttons, const sf::Text& trackNameText, const sf::RectangleShape& volumeSlider, const sf::CircleShape& volumeIndicator, sf::Sprite& backgroundImage) {
+void draw(sf::RenderWindow& window, const std::vector<sf::Sprite>& buttons, const sf::Text& trackNameText, const sf::RectangleShape& volumeSlider, const sf::CircleShape& volumeIndicator, const sf::Sprite& imageSprite) {
     window.clear(sf::Color::White);
-    window.draw(backgroundImage);
     for (const auto& button : buttons)
         window.draw(button);
     window.draw(trackNameText);
     window.draw(volumeSlider);
     window.draw(volumeIndicator);
+    window.draw(imageSprite);
     window.display();
 }
 
 int main(int argc, char* argv[]) {
     std::string rootPath = GetRootPath();
-    std::string folderPath = "C:\\Users\\User\\Music";
+    std::string folderPath = "C:\\Users\\Grotti\\Music";
     std::vector<std::string> audioFiles;
 
     loadAudioFiles(folderPath, audioFiles);
 
     sf::RenderWindow window(sf::VideoMode(600, 800), "Audio Player");
-
-    sf::Texture backgroundTexture;
-    if (!backgroundTexture.loadFromFile(rootPath + "\\Assets\\background.jpg")) {
-        std::cerr << "Failed to load background image" << std::endl;
-        return 1;
-    }
-
-    sf::Sprite backgroundImage(backgroundTexture);
 
     std::vector<sf::Texture> buttonTextures(4);
     std::vector<sf::Sprite> buttons(4);
@@ -226,6 +264,17 @@ int main(int argc, char* argv[]) {
 
     bool isVolumeIndicatorDragged = false;
 
+    std::vector<sf::Texture> images;
+    loadImages(rootPath, images);
+
+    int currentImageIndex = 0;
+
+    sf::Sprite imageSprite;
+    if (!images.empty()) {
+        imageSprite.setTexture(images[currentImageIndex]);
+        setPositionForImage(window, imageSprite, volumeSlider);
+    }
+
     sf::Font font;
     if (!font.loadFromFile(rootPath + "\\Assets\\sf-pro-text-11.ttf")) {
         std::cerr << "Failed to load font" << std::endl;
@@ -238,7 +287,7 @@ int main(int argc, char* argv[]) {
     trackNameText.setPosition(buttons[0].getPosition().x, buttons[0].getPosition().y - 30 - 30);
 
     while (window.isOpen()) {
-        processEvents(window, buttons, music, audioFiles, currentTrackIndex, fadeTimer, activeButton, volumeSlider, volumeIndicator, isVolumeIndicatorDragged);
+        processEvents(window, buttons, music, audioFiles, currentTrackIndex, fadeTimer, activeButton, volumeSlider, volumeIndicator, isVolumeIndicatorDragged, images, currentImageIndex, imageSprite);
 
         if (fadeTimer.getElapsedTime().asSeconds() < fadeDuration) {
             float t = fadeTimer.getElapsedTime().asSeconds() / fadeDuration;
@@ -261,7 +310,7 @@ int main(int argc, char* argv[]) {
             trackNameText.setPosition(centerX - textOffset, buttons[0].getPosition().y - 100);
         }
 
-        draw(window, buttons, trackNameText, volumeSlider, volumeIndicator, backgroundImage);
+        draw(window, buttons, trackNameText, volumeSlider, volumeIndicator, imageSprite);
     }
 
     return 0;

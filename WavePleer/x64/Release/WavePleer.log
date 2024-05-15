@@ -1,33 +1,34 @@
 ﻿  WavePleer.cpp
-C:\учёба\мага\с++\masters_degree_c\WavePleer\WavePleer.cpp(102,73): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
-C:\учёба\мага\с++\masters_degree_c\WavePleer\WavePleer.cpp(126,114): warning C4244: аргумент: преобразование "int" в "T", возможна потеря данных
+C:\Users\Grotti\source\repos\WavePleer\WavePleer\WavePleer.cpp(102,92): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\Grotti\source\repos\WavePleer\WavePleer\WavePleer.cpp(166,114): warning C4244: аргумент: преобразование "int" в "T", возможна потеря данных
           with
           [
               T=float
           ]
-C:\учёба\мага\с++\masters_degree_c\WavePleer\WavePleer.cpp(126,93): warning C4244: аргумент: преобразование "int" в "T", возможна потеря данных
+C:\Users\Grotti\source\repos\WavePleer\WavePleer\WavePleer.cpp(166,93): warning C4244: аргумент: преобразование "int" в "T", возможна потеря данных
           with
           [
               T=float
           ]
-C:\учёба\мага\с++\masters_degree_c\WavePleer\WavePleer.cpp(144,102): warning C4244: аргумент: преобразование "int" в "T", возможна потеря данных
+C:\Users\Grotti\source\repos\WavePleer\WavePleer\WavePleer.cpp(182,104): warning C4267: =: преобразование из "size_t" в "int"; возможна потеря данных
+C:\Users\Grotti\source\repos\WavePleer\WavePleer\WavePleer.cpp(190,102): warning C4244: аргумент: преобразование "int" в "T", возможна потеря данных
           with
           [
               T=float
           ]
-C:\учёба\мага\с++\masters_degree_c\WavePleer\WavePleer.cpp(144,81): warning C4244: аргумент: преобразование "int" в "T", возможна потеря данных
+C:\Users\Grotti\source\repos\WavePleer\WavePleer\WavePleer.cpp(190,81): warning C4244: аргумент: преобразование "int" в "T", возможна потеря данных
           with
           [
               T=float
           ]
-C:\учёба\мага\с++\masters_degree_c\WavePleer\WavePleer.cpp(255,27): warning C4244: инициализация: преобразование "T" в "float", возможна потеря данных
+C:\Users\Grotti\source\repos\WavePleer\WavePleer\WavePleer.cpp(304,27): warning C4244: инициализация: преобразование "T" в "float", возможна потеря данных
           with
           [
               T=unsigned int
           ]
   Создание кода
-  3 of 595 functions ( 0.5%) were compiled, the rest were copied from previous compilation.
-    1 functions were new in current compilation
-    5 functions had inline decision re-evaluated but remain unchanged
+  0 of 622 functions ( 0.0%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   Создание кода завершено
-  WavePleer.vcxproj -> C:\учёба\мага\с++\masters_degree_c\x64\Release\WavePleer.exe
+  WavePleer.vcxproj -> C:\Users\Grotti\source\repos\WavePleer\x64\Release\WavePleer.exe
